@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Math Race</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div id="app-container">
+        <!-- LOBBY SCREEN -->
+        <div id="lobby-screen" class="screen active">
+            <h1 class="glitch-title" data-text="Dynamic Math Race">Dynamic Math Race</h1>
+            <h2 class="subtitle">Edición Espacial</h2>
+            <div class="menu-options">
+                <button class="btn btn-primary" onclick="initHostMode(false)">🚀 Iniciar Pantalla Principal (Relevos /
+                    Default)</button>
+                <button class="btn btn-primary" onclick="initHostMode(true)">🚀 Iniciar Pantalla Principal (1 vs
+                    1)</button>
+                <button class="btn btn-secondary" onclick="initBuzzerMode('Relámpago')">📱 Entrar como Equipo 1v1 o
+                    Relevos</button>
+            </div>
+        </div>
+
+        <!-- HOST SCREEN (Main Projection) -->
+        <div id="host-screen" class="screen">
+            <div class="top-bar">
+                <div class="room-code">
+                    <span class="label">CÓDIGO DE SALA:</span>
+                    <span id="display-room-code" class="code-value">----</span>
+                </div>
+                <div class="connection-status">
+                    Esperando equipos... <span id="connected-count">0</span>/2
+                </div>
+                <button class="btn btn-danger btn-small" onclick="goLobby()">X Salir</button>
+            </div>
+
+            <div class="race-track-container">
+                <!-- Track 1 -->
+                <div class="track">
+                    <div class="track-line"></div>
+                    <div id="avatar-1" class="avatar avatar-blue" style="transform: translateX(0%);">
+                        <div class="avatar-body"></div>
+                        <div class="avatar-ears"></div>
+                        <div class="avatar-name">Equipo 1</div>
+                    </div>
+                    <div class="finish-line"></div>
+                </div>
+
+                <!-- Track 2 -->
+                <div class="track">
+                    <div class="track-line"></div>
+                    <div id="avatar-2" class="avatar avatar-pink" style="transform: translateX(0%);">
+                        <div class="avatar-body"></div>
+                        <div class="avatar-ears"></div>
+                        <div class="avatar-name">Equipo 2</div>
+                    </div>
+                    <div class="finish-line"></div>
+                </div>
+            </div>
+
+            <!-- This board will be used in 1v1 split screen mode -->
+            <div id="split-board-container" class="hidden">
+                <div class="half-board left-board">
+                    <div class="current-question" id="host-question-1">7 x 8 = ?</div>
+                </div>
+                <div class="half-board right-board">
+                    <div class="current-question" id="host-question-2">7 x 8 = ?</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BUZZER SCREEN (Tablet/Mobile) -->
+        <div id="buzzer-screen" class="screen">
+            <div id="join-section">
+                <h2>Unirse a la Carrera</h2>
+                <input type="text" id="input-room-code" class="huge-input" placeholder="CÓDIGO (ej. A4B2)" maxlength="4"
+                    style="text-transform:uppercase">
+                <select id="team-selector" class="huge-input">
+                    <option value="1">Equipo 1 (Axul)</option>
+                    <option value="2">Equipo 2 (Magenta)</option>
+                </select>
+                <button class="btn btn-primary" onclick="joinRoom()">Conectar</button>
+                <button class="btn btn-danger" onclick="goLobby()">Cancelar</button>
+            </div>
+
+            <div id="gameplay-section" class="hidden">
+                <div class="team-header" id="buzzer-team-name">EQUIPO X</div>
+                <div class="buzzer-question" id="buzzer-question-display">
+                    <!-- Question appears here -->
+                    Preparado...
+                </div>
+                <div class="numpad">
+                    <input type="number" id="answer-input" class="huge-input" readonly placeholder="Respuesta">
+                    <div class="numpad-grid">
+                        <button onclick="appendNum(1)">1</button>
+                        <button onclick="appendNum(2)">2</button>
+                        <button onclick="appendNum(3)">3</button>
+                        <button onclick="appendNum(4)">4</button>
+                        <button onclick="appendNum(5)">5</button>
+                        <button onclick="appendNum(6)">6</button>
+                        <button onclick="appendNum(7)">7</button>
+                        <button onclick="appendNum(8)">8</button>
+                        <button onclick="appendNum(9)">9</button>
+                        <button onclick="clearNum()">C</button>
+                        <button onclick="appendNum(0)">0</button>
+                        <button class="btn-submit" onclick="submitAnswer()">ENVIAR</button>
+                    </div>
+                </div>
+                <div id="freeze-overlay" class="freeze-overlay hidden">
+                    <h2>¡ERROR!</h2>
+                    <p>Sistema bloqueado temporalmente...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
