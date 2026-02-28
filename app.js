@@ -134,8 +134,8 @@ function getUniqueQuestion(teamId) {
 
 const WINNING_SCORE = 10;
 const gameStatus = {
-    team1: { score: 0, currentQuestion: null, streak: 0 },
-    team2: { score: 0, currentQuestion: null, streak: 0 }
+    team1: { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0 },
+    team2: { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0 }
 };
 let gameStartTime = null;
 
@@ -158,6 +158,12 @@ function goLobby() {
     gameStatus.team2.currentQuestion = null;
     gameStatus.team1.streak = 0;
     gameStatus.team2.streak = 0;
+    gameStatus.team1.bestStreak = 0;
+    gameStatus.team2.bestStreak = 0;
+    gameStatus.team1.incorrect = 0;
+    gameStatus.team2.incorrect = 0;
+    gameStatus.team1.totalAnswerTimeMs = 0;
+    gameStatus.team2.totalAnswerTimeMs = 0;
     seenQuestions.team1.clear();
     seenQuestions.team2.clear();
     // Hide victory
@@ -225,8 +231,8 @@ async function initHostMode(is1v1 = false) {
     });
 
     // Reset game
-    gameStatus.team1 = { score: 0, currentQuestion: null, streak: 0 };
-    gameStatus.team2 = { score: 0, currentQuestion: null, streak: 0 };
+    gameStatus.team1 = { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0 };
+    gameStatus.team2 = { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0 };
     seenQuestions.team1.clear();
     seenQuestions.team2.clear();
     gameStartTime = null;
@@ -254,6 +260,7 @@ function sendQuestionToTeam(teamId) {
         const ts = gameStatus[`team${teamId}`];
         const q = getUniqueQuestion(teamId);
         ts.currentQuestion = q;
+        ts.lastQuestionTime = Date.now();
         connections[teamId].send({ type: 'NEW_QUESTION', text: q.text });
         // Update host split board
         const el = document.getElementById(`host-question-${teamId}`);
@@ -273,8 +280,11 @@ function handleHostData(teamId, data) {
         const submitted = parseInt(data.value);
 
         if (submitted === correct) {
+            // Track answer time
+            if (ts.lastQuestionTime) ts.totalAnswerTimeMs += (Date.now() - ts.lastQuestionTime);
             ts.score += 1;
             ts.streak += 1;
+            if (ts.streak > ts.bestStreak) ts.bestStreak = ts.streak;
             updateAvatars();
             updateScoreDisplay();
             updateStreakDisplay();
@@ -298,7 +308,8 @@ function handleHostData(teamId, data) {
             }
         } else {
             connections[teamId].send({ type: 'FREEZE_PENALTY', seconds: 3 });
-            ts.streak = 0; // Reset streak on wrong answer
+            ts.streak = 0;
+            ts.incorrect += 1;
             updateStreakDisplay();
             // After freeze, buzzer will request a new question
         }
@@ -345,6 +356,33 @@ function showVictory(teamId, timeStr) {
     document.getElementById('victory-text').innerText = '🎉 ¡VICTORIA! 🎉';
     document.getElementById('victory-team').innerText = `EQUIPO ${teamId} gana en ${timeStr}`;
     launchConfetti();
+
+    // Build post-race summary
+    const summaryEl = document.getElementById('post-race-summary');
+    if (summaryEl) {
+        let html = '<div class="summary-grid">';
+        [1, 2].forEach(id => {
+            const ts = gameStatus[`team${id}`];
+            const total = ts.score + ts.incorrect;
+            const accuracy = total > 0 ? Math.round((ts.score / total) * 100) : 0;
+            const avgTime = ts.score > 0 ? (ts.totalAnswerTimeMs / ts.score / 1000).toFixed(1) : '—';
+            const isWinner = id == teamId;
+            html += `
+                <div class="summary-card ${isWinner ? 'summary-winner' : ''} ${id === 1 ? 'card-blue' : 'card-pink'}">
+                    <div class="summary-team">${isWinner ? '🏆 ' : ''}EQUIPO ${id}</div>
+                    <div class="summary-stats">
+                        <div class="stat-row"><span class="stat-label">✅ Correctas</span><span class="stat-value">${ts.score}</span></div>
+                        <div class="stat-row"><span class="stat-label">❌ Incorrectas</span><span class="stat-value">${ts.incorrect}</span></div>
+                        <div class="stat-row"><span class="stat-label">🎯 Precisión</span><span class="stat-value">${accuracy}%</span></div>
+                        <div class="stat-row"><span class="stat-label">🔥 Mejor racha</span><span class="stat-value">${ts.bestStreak}</span></div>
+                        <div class="stat-row"><span class="stat-label">⏱️ Promedio</span><span class="stat-value">${avgTime}s</span></div>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        summaryEl.innerHTML = html;
+        summaryEl.classList.remove('hidden');
+    }
 }
 
 // ==========================================

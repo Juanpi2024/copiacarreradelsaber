@@ -1483,3 +1483,104 @@ h3 {
 .level-select {
     font-size: 1.1rem !important;
 }
+
+/* ===== POST-RACE SUMMARY ===== */
+#post-race-summary {
+    margin: 1.5rem 0;
+    width: 100%;
+    max-width: 700px;
+}
+
+.summary-grid {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.summary-card {
+    flex: 1;
+    min-width: 250px;
+    max-width: 320px;
+    border-radius: 16px;
+    padding: 1.2rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--frost);
+    animation: summarySlide 0.5s ease-out;
+}
+
+@keyframes summarySlide {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.card-blue {
+    border-color: var(--accent-blue);
+    box-shadow: inset 0 0 20px rgba(0, 180, 255, 0.1);
+}
+
+.card-pink {
+    border-color: var(--accent-pink);
+    box-shadow: inset 0 0 20px rgba(224, 64, 251, 0.1);
+}
+
+.summary-winner {
+    border-width: 3px;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.05);
+}
+
+.summary-team {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 0.8rem;
+    letter-spacing: 2px;
+}
+
+.card-blue .summary-team {
+    color: var(--accent-blue);
+}
+
+.card-pink .summary-team {
+    color: var(--accent-pink);
+}
+
+.summary-winner .summary-team {
+    color: var(--accent-yellow);
+    text-shadow: 0 0 10px var(--accent-yellow);
+}
+
+.summary-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+}
