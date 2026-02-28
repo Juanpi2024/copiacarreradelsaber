@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dynamic Math Race</title>
     <link rel="stylesheet" href="styles.css">
     <link
@@ -12,18 +12,23 @@
 </head>
 
 <body>
+    <!-- Animated stars background -->
+    <div id="stars-bg"></div>
+
+    <!-- Confetti canvas for victory -->
+    <canvas id="confetti-canvas"></canvas>
+
     <div id="app-container">
         <!-- LOBBY SCREEN -->
         <div id="lobby-screen" class="screen active">
-            <h1 class="glitch-title" data-text="Dynamic Math Race">Dynamic Math Race</h1>
-            <h2 class="subtitle">Edición Espacial</h2>
+            <div class="lobby-logo">🚀</div>
+            <h1 class="glitch-title" data-text="Math Race">Math Race</h1>
+            <h2 class="subtitle">⚡ Edición Espacial ⚡</h2>
             <div class="menu-options">
-                <button class="btn btn-primary" onclick="initHostMode(false)">🚀 Iniciar Pantalla Principal (Relevos /
-                    Default)</button>
-                <button class="btn btn-primary" onclick="initHostMode(true)">🚀 Iniciar Pantalla Principal (1 vs
-                    1)</button>
-                <button class="btn btn-secondary" onclick="initBuzzerMode('Relámpago')">📱 Entrar como Equipo 1v1 o
-                    Relevos</button>
+                <button class="btn btn-primary pulse-btn" onclick="initHostMode(false)">🖥️ Iniciar Host
+                    (Relevos)</button>
+                <button class="btn btn-primary pulse-btn" onclick="initHostMode(true)">⚔️ Iniciar Host (1 vs 1)</button>
+                <button class="btn btn-secondary" onclick="initBuzzerMode()">📱 Entrar como Equipo</button>
             </div>
         </div>
 
@@ -31,46 +36,73 @@
         <div id="host-screen" class="screen">
             <div class="top-bar">
                 <div class="room-code">
-                    <span class="label">CÓDIGO DE SALA:</span>
+                    <span class="label">SALA:</span>
                     <span id="display-room-code" class="code-value">----</span>
                 </div>
-                <div class="connection-status">
-                    Esperando equipos... <span id="connected-count">0</span>/2
+                <div class="score-display">
+                    <span class="score-team1">🔵 <span id="score-1">0</span>/10</span>
+                    <span class="score-vs">VS</span>
+                    <span class="score-team2">🟣 <span id="score-2">0</span>/10</span>
                 </div>
-                <button class="btn btn-danger btn-small" onclick="goLobby()">X Salir</button>
+                <div class="connection-status">
+                    Equipos: <span id="connected-count">0</span>/2
+                </div>
+                <button class="btn btn-danger btn-small" onclick="goLobby()">✕</button>
             </div>
 
             <div class="race-track-container">
                 <!-- Track 1 -->
-                <div class="track">
-                    <div class="track-line"></div>
-                    <div id="avatar-1" class="avatar avatar-blue" style="transform: translateX(0%);">
-                        <div class="avatar-body"></div>
-                        <div class="avatar-ears"></div>
+                <div class="track track-1">
+                    <div class="track-ground"></div>
+                    <div id="avatar-1" class="avatar avatar-blue" style="left: 2%;">
+                        <div class="avatar-body">
+                            <div class="avatar-eye left-eye"></div>
+                            <div class="avatar-eye right-eye"></div>
+                            <div class="avatar-mouth"></div>
+                        </div>
+                        <div class="avatar-ear left-ear"></div>
+                        <div class="avatar-ear right-ear"></div>
                         <div class="avatar-name">Equipo 1</div>
                     </div>
-                    <div class="finish-line"></div>
+                    <div class="finish-flag">🏁</div>
                 </div>
 
                 <!-- Track 2 -->
-                <div class="track">
-                    <div class="track-line"></div>
-                    <div id="avatar-2" class="avatar avatar-pink" style="transform: translateX(0%);">
-                        <div class="avatar-body"></div>
-                        <div class="avatar-ears"></div>
+                <div class="track track-2">
+                    <div class="track-ground"></div>
+                    <div id="avatar-2" class="avatar avatar-pink" style="left: 2%;">
+                        <div class="avatar-body">
+                            <div class="avatar-eye left-eye"></div>
+                            <div class="avatar-eye right-eye"></div>
+                            <div class="avatar-mouth"></div>
+                        </div>
+                        <div class="avatar-ear left-ear"></div>
+                        <div class="avatar-ear right-ear"></div>
                         <div class="avatar-name">Equipo 2</div>
                     </div>
-                    <div class="finish-line"></div>
+                    <div class="finish-flag">🏁</div>
                 </div>
             </div>
 
-            <!-- This board will be used in 1v1 split screen mode -->
+            <!-- Split board for 1v1 -->
             <div id="split-board-container" class="hidden">
                 <div class="half-board left-board">
-                    <div class="current-question" id="host-question-1">7 x 8 = ?</div>
+                    <div class="board-label">🔵 EQUIPO 1</div>
+                    <div class="current-question" id="host-question-1">Esperando...</div>
                 </div>
                 <div class="half-board right-board">
-                    <div class="current-question" id="host-question-2">7 x 8 = ?</div>
+                    <div class="board-label">🟣 EQUIPO 2</div>
+                    <div class="current-question" id="host-question-2">Esperando...</div>
+                </div>
+            </div>
+
+            <!-- Victory overlay -->
+            <div id="victory-overlay" class="hidden">
+                <div class="victory-content">
+                    <div class="trophy">🏆</div>
+                    <h1 id="victory-text">¡VICTORIA!</h1>
+                    <p id="victory-team"></p>
+                    <button class="btn btn-primary pulse-btn" onclick="goLobby()">🔄 Revancha</button>
                 </div>
             </div>
         </div>
@@ -78,47 +110,59 @@
         <!-- BUZZER SCREEN (Tablet/Mobile) -->
         <div id="buzzer-screen" class="screen">
             <div id="join-section">
-                <h2>Unirse a la Carrera</h2>
-                <input type="text" id="input-room-code" class="huge-input" placeholder="CÓDIGO (ej. A4B2)" maxlength="4"
-                    style="text-transform:uppercase">
-                <select id="team-selector" class="huge-input">
-                    <option value="1">Equipo 1 (Axul)</option>
-                    <option value="2">Equipo 2 (Magenta)</option>
-                </select>
-                <button class="btn btn-primary" onclick="joinRoom()">Conectar</button>
-                <button class="btn btn-danger" onclick="goLobby()">Cancelar</button>
+                <div class="join-card">
+                    <h2>🎮 Unirse a la Carrera</h2>
+                    <input type="text" id="input-room-code" class="huge-input" placeholder="CÓDIGO" maxlength="4"
+                        style="text-transform:uppercase" autocomplete="off">
+                    <select id="team-selector" class="huge-input">
+                        <option value="1">🔵 Equipo 1 (Azul)</option>
+                        <option value="2">🟣 Equipo 2 (Magenta)</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="joinRoom()">🔗 Conectar</button>
+                    <button class="btn btn-danger btn-small" onclick="goLobby()">Cancelar</button>
+                </div>
             </div>
 
             <div id="gameplay-section" class="hidden">
                 <div class="team-header" id="buzzer-team-name">EQUIPO X</div>
-                <div class="buzzer-question" id="buzzer-question-display">
-                    <!-- Question appears here -->
-                    Preparado...
+                <div class="buzzer-question" id="buzzer-question-display">Preparado...</div>
+
+                <!-- ENVIAR BUTTON + INPUT — ALWAYS VISIBLE BEFORE NUMPAD -->
+                <div class="answer-bar">
+                    <input type="text" id="answer-input" class="answer-field" readonly placeholder="?" inputmode="none">
+                    <button class="send-btn" onclick="submitAnswer()">ENVIAR ➤</button>
                 </div>
-                <div class="numpad">
-                    <input type="number" id="answer-input" class="huge-input" readonly placeholder="Respuesta">
-                    <div class="numpad-grid">
-                        <button onclick="appendNum(1)">1</button>
-                        <button onclick="appendNum(2)">2</button>
-                        <button onclick="appendNum(3)">3</button>
-                        <button onclick="appendNum(4)">4</button>
-                        <button onclick="appendNum(5)">5</button>
-                        <button onclick="appendNum(6)">6</button>
-                        <button onclick="appendNum(7)">7</button>
-                        <button onclick="appendNum(8)">8</button>
-                        <button onclick="appendNum(9)">9</button>
-                        <button onclick="clearNum()">C</button>
-                        <button onclick="appendNum(0)">0</button>
-                        <button class="btn-submit" onclick="submitAnswer()">ENVIAR</button>
-                    </div>
+
+                <!-- NUMPAD -->
+                <div class="numpad-grid">
+                    <button class="num-key" onclick="appendNum(1)">1</button>
+                    <button class="num-key" onclick="appendNum(2)">2</button>
+                    <button class="num-key" onclick="appendNum(3)">3</button>
+                    <button class="num-key" onclick="appendNum(4)">4</button>
+                    <button class="num-key" onclick="appendNum(5)">5</button>
+                    <button class="num-key" onclick="appendNum(6)">6</button>
+                    <button class="num-key" onclick="appendNum(7)">7</button>
+                    <button class="num-key" onclick="appendNum(8)">8</button>
+                    <button class="num-key" onclick="appendNum(9)">9</button>
+                    <button class="num-key key-clear" onclick="clearNum()">⌫</button>
+                    <button class="num-key key-zero" onclick="appendNum(0)">0</button>
+                    <button class="num-key key-neg" onclick="appendNeg()">−</button>
                 </div>
+
+                <!-- Freeze overlay -->
                 <div id="freeze-overlay" class="freeze-overlay hidden">
-                    <h2>¡ERROR!</h2>
-                    <p>Sistema bloqueado temporalmente...</p>
+                    <div class="freeze-icon">❌</div>
+                    <h2>¡INCORRECTO!</h2>
+                    <div class="freeze-timer" id="freeze-timer">3</div>
+                </div>
+
+                <!-- Correct flash -->
+                <div id="correct-flash" class="correct-flash hidden">
+                    <div class="correct-icon">✅</div>
+                    <h2>¡CORRECTO!</h2>
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- Scripts -->
