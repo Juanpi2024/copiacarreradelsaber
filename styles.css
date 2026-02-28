@@ -1442,3 +1442,44 @@ h3 {
         font-size: 1.5rem;
     }
 }
+
+/* ===== STREAK BADGE ===== */
+.streak-badge {
+    display: inline-block;
+    font-size: 1.2rem;
+    color: var(--accent-yellow);
+    text-shadow: 0 0 15px var(--accent-yellow), 0 0 30px rgba(255, 145, 0, 0.5);
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
+.streak-pop {
+    animation: streakPop 0.4s ease;
+}
+
+@keyframes streakPop {
+    0% {
+        transform: scale(0.5);
+    }
+
+    50% {
+        transform: scale(1.4);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Level selector label */
+.level-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: var(--accent-cyan);
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.level-select {
+    font-size: 1.1rem !important;
+}

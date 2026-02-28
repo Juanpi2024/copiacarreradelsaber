@@ -134,8 +134,8 @@ function getUniqueQuestion(teamId) {
 
 const WINNING_SCORE = 10;
 const gameStatus = {
-    team1: { score: 0, currentQuestion: null },
-    team2: { score: 0, currentQuestion: null }
+    team1: { score: 0, currentQuestion: null, streak: 0 },
+    team2: { score: 0, currentQuestion: null, streak: 0 }
 };
 let gameStartTime = null;
 
@@ -156,6 +156,8 @@ function goLobby() {
     gameStatus.team2.score = 0;
     gameStatus.team1.currentQuestion = null;
     gameStatus.team2.currentQuestion = null;
+    gameStatus.team1.streak = 0;
+    gameStatus.team2.streak = 0;
     seenQuestions.team1.clear();
     seenQuestions.team2.clear();
     // Hide victory
@@ -223,8 +225,8 @@ async function initHostMode(is1v1 = false) {
     });
 
     // Reset game
-    gameStatus.team1 = { score: 0, currentQuestion: null };
-    gameStatus.team2 = { score: 0, currentQuestion: null };
+    gameStatus.team1 = { score: 0, currentQuestion: null, streak: 0 };
+    gameStatus.team2 = { score: 0, currentQuestion: null, streak: 0 };
     seenQuestions.team1.clear();
     seenQuestions.team2.clear();
     gameStartTime = null;
@@ -272,9 +274,11 @@ function handleHostData(teamId, data) {
 
         if (submitted === correct) {
             ts.score += 1;
+            ts.streak += 1;
             updateAvatars();
             updateScoreDisplay();
-            connections[teamId].send({ type: 'CORRECT' });
+            updateStreakDisplay();
+            connections[teamId].send({ type: 'CORRECT', streak: ts.streak });
 
             if (ts.score >= WINNING_SCORE) {
                 // VICTORY!
@@ -294,6 +298,8 @@ function handleHostData(teamId, data) {
             }
         } else {
             connections[teamId].send({ type: 'FREEZE_PENALTY', seconds: 3 });
+            ts.streak = 0; // Reset streak on wrong answer
+            updateStreakDisplay();
             // After freeze, buzzer will request a new question
         }
     }
@@ -302,14 +308,34 @@ function handleHostData(teamId, data) {
 function updateAvatars() {
     const p1 = Math.min((gameStatus.team1.score / WINNING_SCORE) * 100, 100);
     const p2 = Math.min((gameStatus.team2.score / WINNING_SCORE) * 100, 100);
-    // Move runner characters
     document.getElementById('avatar-1').style.left = `${2 + p1 * 0.85}%`;
     document.getElementById('avatar-2').style.left = `${2 + p2 * 0.85}%`;
-    // Fill progress bars
     const pf1 = document.getElementById('progress-fill-1');
     const pf2 = document.getElementById('progress-fill-2');
     if (pf1) pf1.style.width = `${p1}%`;
     if (pf2) pf2.style.width = `${p2}%`;
+}
+
+// ==========================================
+// STREAK DISPLAY (🔥)
+// ==========================================
+function updateStreakDisplay() {
+    [1, 2].forEach(id => {
+        const streak = gameStatus[`team${id}`].streak;
+        const el = document.getElementById(`streak-${id}`);
+        if (!el) return;
+        if (streak >= 2) {
+            let fires = '🔥';
+            if (streak >= 7) fires = '🔥🔥🔥';
+            else if (streak >= 5) fires = '🔥🔥';
+            el.innerText = `${fires} ×${streak}`;
+            el.classList.remove('hidden');
+            el.classList.add('streak-pop');
+            setTimeout(() => el.classList.remove('streak-pop'), 400);
+        } else {
+            el.classList.add('hidden');
+        }
+    });
 }
 
 function showVictory(teamId, timeStr) {
@@ -414,6 +440,14 @@ function joinRoom() {
             }
             if (data.type === 'CORRECT') {
                 showCorrectFlash();
+                // Show streak on buzzer
+                if (data.streak && data.streak >= 2) {
+                    let fires = '🔥';
+                    if (data.streak >= 7) fires = '🔥🔥🔥';
+                    else if (data.streak >= 5) fires = '🔥🔥';
+                    const th = document.getElementById('buzzer-team-name');
+                    th.innerText = `EQUIPO ${buzzerTeamId} ${fires}×${data.streak}`;
+                }
             }
             if (data.type === 'FREEZE_PENALTY') {
                 applyFreeze(data.seconds);
