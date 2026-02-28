@@ -144,7 +144,11 @@ async function initHostMode(is1v1 = false) {
 }
 
 function updateConnectionCount() {
-    document.getElementById('connected-count').innerText = Object.keys(connections).length;
+    const count = Object.keys(connections).length;
+    document.getElementById('connected-count').innerText = count;
+    // Hide waiting message once at least 1 team connects
+    const wm = document.getElementById('waiting-msg');
+    if (wm) wm.style.display = count > 0 ? 'none' : 'flex';
 }
 
 function updateScoreDisplay() {
@@ -211,9 +215,14 @@ function handleHostData(teamId, data) {
 function updateAvatars() {
     const p1 = Math.min((gameStatus.team1.score / WINNING_SCORE) * 100, 100);
     const p2 = Math.min((gameStatus.team2.score / WINNING_SCORE) * 100, 100);
-    // Use left % (max ~88% so avatar doesn't overflow)
-    document.getElementById('avatar-1').style.left = `${2 + p1 * 0.86}%`;
-    document.getElementById('avatar-2').style.left = `${2 + p2 * 0.86}%`;
+    // Move runner characters
+    document.getElementById('avatar-1').style.left = `${2 + p1 * 0.85}%`;
+    document.getElementById('avatar-2').style.left = `${2 + p2 * 0.85}%`;
+    // Fill progress bars
+    const pf1 = document.getElementById('progress-fill-1');
+    const pf2 = document.getElementById('progress-fill-2');
+    if (pf1) pf1.style.width = `${p1}%`;
+    if (pf2) pf2.style.width = `${p2}%`;
 }
 
 function showVictory(teamId, timeStr) {

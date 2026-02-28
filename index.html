@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dynamic Math Race</title>
+    <title>🚀 Math Race — Carrera Matemática</title>
     <link rel="stylesheet" href="styles.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@400;700&display=swap"
@@ -12,106 +12,162 @@
 </head>
 
 <body>
-    <!-- Animated stars background -->
-    <div id="stars-bg"></div>
-
     <!-- Confetti canvas for victory -->
     <canvas id="confetti-canvas"></canvas>
 
     <div id="app-container">
-        <!-- LOBBY SCREEN -->
+
+        <!-- ========== LOBBY SCREEN ========== -->
         <div id="lobby-screen" class="screen active">
-            <div class="lobby-logo">🚀</div>
-            <h1 class="glitch-title" data-text="Math Race">Math Race</h1>
-            <h2 class="subtitle">⚡ Edición Espacial ⚡</h2>
-            <div class="menu-options">
-                <button class="btn btn-primary pulse-btn" onclick="initHostMode(false)">🖥️ Iniciar Host
-                    (Relevos)</button>
-                <button class="btn btn-primary pulse-btn" onclick="initHostMode(true)">⚔️ Iniciar Host (1 vs 1)</button>
-                <button class="btn btn-secondary" onclick="initBuzzerMode()">📱 Entrar como Equipo</button>
+            <div class="lobby-bg"></div>
+            <div class="lobby-content">
+                <div class="lobby-logo">🚀</div>
+                <h1 class="glitch-title" data-text="MATH RACE">MATH RACE</h1>
+                <h2 class="subtitle">⚡ Carrera Matemática Espacial ⚡</h2>
+                <div class="menu-options">
+                    <button class="btn btn-primary pulse-btn" onclick="initHostMode(false)">🖥️ Pantalla Principal
+                        (Relevos)</button>
+                    <button class="btn btn-primary pulse-btn" onclick="initHostMode(true)">⚔️ Pantalla Principal (1 vs
+                        1)</button>
+                    <div class="menu-divider"></div>
+                    <button class="btn btn-secondary" onclick="initBuzzerMode()">📱 Conectar como Equipo</button>
+                </div>
             </div>
         </div>
 
-        <!-- HOST SCREEN (Main Projection) -->
+        <!-- ========== HOST SCREEN (PROJECTOR VIEW) ========== -->
         <div id="host-screen" class="screen">
-            <div class="top-bar">
-                <div class="room-code">
-                    <span class="label">SALA:</span>
-                    <span id="display-room-code" class="code-value">----</span>
-                </div>
-                <div class="score-display">
-                    <span class="score-team1">🔵 <span id="score-1">0</span>/10</span>
-                    <span class="score-vs">VS</span>
-                    <span class="score-team2">🟣 <span id="score-2">0</span>/10</span>
-                </div>
-                <div class="connection-status">
-                    Equipos: <span id="connected-count">0</span>/2
-                </div>
-                <button class="btn btn-danger btn-small" onclick="goLobby()">✕</button>
+            <!-- Animated space/tropical background layers -->
+            <div class="host-bg">
+                <div class="bg-stars"></div>
+                <div class="bg-mountains"></div>
+                <div class="bg-palms"></div>
+                <div class="bg-ground"></div>
             </div>
 
-            <div class="race-track-container">
-                <!-- Track 1 -->
-                <div class="track track-1">
-                    <div class="track-ground"></div>
-                    <div id="avatar-1" class="avatar avatar-blue" style="left: 2%;">
-                        <div class="avatar-body">
-                            <div class="avatar-eye left-eye"></div>
-                            <div class="avatar-eye right-eye"></div>
-                            <div class="avatar-mouth"></div>
-                        </div>
-                        <div class="avatar-ear left-ear"></div>
-                        <div class="avatar-ear right-ear"></div>
-                        <div class="avatar-name">Equipo 1</div>
+            <!-- Top bar -->
+            <div class="top-bar">
+                <div class="room-info">
+                    <span class="room-label">CÓDIGO:</span>
+                    <span id="display-room-code" class="room-code-value">----</span>
+                </div>
+                <div class="live-scores">
+                    <div class="team-score team-score-blue">
+                        <div class="team-dot dot-blue"></div>
+                        <span class="team-label">EQUIPO 1</span>
+                        <span class="team-score-num" id="score-1">0</span>
+                        <span class="team-score-max">/10</span>
                     </div>
-                    <div class="finish-flag">🏁</div>
+                    <div class="vs-badge">VS</div>
+                    <div class="team-score team-score-pink">
+                        <div class="team-dot dot-pink"></div>
+                        <span class="team-label">EQUIPO 2</span>
+                        <span class="team-score-num" id="score-2">0</span>
+                        <span class="team-score-max">/10</span>
+                    </div>
+                </div>
+                <div class="connection-info">
+                    <span class="conn-icon">📡</span> <span id="connected-count">0</span>/2
+                    <button class="exit-btn" onclick="goLobby()">✕</button>
+                </div>
+            </div>
+
+            <!-- RACE AREA -->
+            <div class="race-area">
+                <!-- Track 1 -->
+                <div class="race-lane lane-blue">
+                    <div class="lane-label">EQUIPO 1</div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill-1"></div>
+                        <div class="progress-markers">
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="lane-runner" id="avatar-1">
+                        <div class="runner-character blue-char">
+                            <div class="char-ear char-ear-l"></div>
+                            <div class="char-ear char-ear-r"></div>
+                            <div class="char-head">
+                                <div class="char-eye eye-l"></div>
+                                <div class="char-eye eye-r"></div>
+                                <div class="char-mouth"></div>
+                            </div>
+                            <div class="char-body"></div>
+                            <div class="char-legs">
+                                <div class="char-leg leg-l"></div>
+                                <div class="char-leg leg-r"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="finish-marker">🏁</div>
                 </div>
 
                 <!-- Track 2 -->
-                <div class="track track-2">
-                    <div class="track-ground"></div>
-                    <div id="avatar-2" class="avatar avatar-pink" style="left: 2%;">
-                        <div class="avatar-body">
-                            <div class="avatar-eye left-eye"></div>
-                            <div class="avatar-eye right-eye"></div>
-                            <div class="avatar-mouth"></div>
+                <div class="race-lane lane-pink">
+                    <div class="lane-label">EQUIPO 2</div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill-2"></div>
+                        <div class="progress-markers">
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span>
                         </div>
-                        <div class="avatar-ear left-ear"></div>
-                        <div class="avatar-ear right-ear"></div>
-                        <div class="avatar-name">Equipo 2</div>
                     </div>
-                    <div class="finish-flag">🏁</div>
+                    <div class="lane-runner" id="avatar-2">
+                        <div class="runner-character pink-char">
+                            <div class="char-ear char-ear-l"></div>
+                            <div class="char-ear char-ear-r"></div>
+                            <div class="char-head">
+                                <div class="char-eye eye-l"></div>
+                                <div class="char-eye eye-r"></div>
+                                <div class="char-mouth"></div>
+                            </div>
+                            <div class="char-body"></div>
+                            <div class="char-legs">
+                                <div class="char-leg leg-l"></div>
+                                <div class="char-leg leg-r"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="finish-marker">🏁</div>
                 </div>
             </div>
 
-            <!-- Split board for 1v1 -->
+            <!-- Split board for 1v1 questions visibility -->
             <div id="split-board-container" class="hidden">
-                <div class="half-board left-board">
-                    <div class="board-label">🔵 EQUIPO 1</div>
-                    <div class="current-question" id="host-question-1">Esperando...</div>
+                <div class="question-board board-blue">
+                    <div class="board-team-label">🔵 EQUIPO 1</div>
+                    <div class="board-question" id="host-question-1">Esperando...</div>
                 </div>
-                <div class="half-board right-board">
-                    <div class="board-label">🟣 EQUIPO 2</div>
-                    <div class="current-question" id="host-question-2">Esperando...</div>
+                <div class="question-board board-pink">
+                    <div class="board-team-label">🟣 EQUIPO 2</div>
+                    <div class="board-question" id="host-question-2">Esperando...</div>
                 </div>
+            </div>
+
+            <!-- Waiting message -->
+            <div id="waiting-msg" class="waiting-msg">
+                <div class="waiting-pulse"></div>
+                Esperando que los equipos se conecten con el código de arriba...
             </div>
 
             <!-- Victory overlay -->
             <div id="victory-overlay" class="hidden">
                 <div class="victory-content">
-                    <div class="trophy">🏆</div>
-                    <h1 id="victory-text">¡VICTORIA!</h1>
-                    <p id="victory-team"></p>
-                    <button class="btn btn-primary pulse-btn" onclick="goLobby()">🔄 Revancha</button>
+                    <div class="trophy-row">🏆🏆🏆</div>
+                    <h1 id="victory-text" class="victory-title">¡VICTORIA!</h1>
+                    <p id="victory-team" class="victory-sub"></p>
+                    <button class="btn btn-primary btn-big pulse-btn" onclick="goLobby()">🔄 REVANCHA</button>
                 </div>
             </div>
         </div>
 
-        <!-- BUZZER SCREEN (Tablet/Mobile) -->
+        <!-- ========== BUZZER SCREEN (MOBILE) ========== -->
         <div id="buzzer-screen" class="screen">
             <div id="join-section">
                 <div class="join-card">
-                    <h2>🎮 Unirse a la Carrera</h2>
+                    <div class="join-icon">🎮</div>
+                    <h2>Unirse a la Carrera</h2>
                     <input type="text" id="input-room-code" class="huge-input" placeholder="CÓDIGO" maxlength="4"
                         style="text-transform:uppercase" autocomplete="off">
                     <select id="team-selector" class="huge-input">
@@ -127,7 +183,7 @@
                 <div class="team-header" id="buzzer-team-name">EQUIPO X</div>
                 <div class="buzzer-question" id="buzzer-question-display">Preparado...</div>
 
-                <!-- ENVIAR BUTTON + INPUT — ALWAYS VISIBLE BEFORE NUMPAD -->
+                <!-- ANSWER BAR: INPUT + ENVIAR — ALWAYS VISIBLE -->
                 <div class="answer-bar">
                     <input type="text" id="answer-input" class="answer-field" readonly placeholder="?" inputmode="none">
                     <button class="send-btn" onclick="submitAnswer()">ENVIAR ➤</button>
@@ -155,7 +211,6 @@
                     <h2>¡INCORRECTO!</h2>
                     <div class="freeze-timer" id="freeze-timer">3</div>
                 </div>
-
                 <!-- Correct flash -->
                 <div id="correct-flash" class="correct-flash hidden">
                     <div class="correct-icon">✅</div>
@@ -163,9 +218,9 @@
                 </div>
             </div>
         </div>
+
     </div>
 
-    <!-- Scripts -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="gas_connector.js"></script>
     <script src="app.js"></script>
