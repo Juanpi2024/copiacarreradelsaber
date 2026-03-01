@@ -184,6 +184,8 @@
                     <button class="btn btn-primary btn-big pulse-btn" onclick="goLobby()">🔄 REVANCHA</button>
                 </div>
             </div>
+            <!-- Host epic notifications -->
+            <div id="host-notifications"></div>
         </div>
 
         <!-- ========== BUZZER SCREEN (MOBILE) ========== -->
@@ -205,6 +207,11 @@
 
             <div id="gameplay-section" class="hidden">
                 <div class="team-header" id="buzzer-team-name">EQUIPO X</div>
+                <!-- Countdown timer bar -->
+                <div id="countdown-container" class="countdown-container hidden">
+                    <div id="countdown-bar" class="countdown-fill"></div>
+                </div>
+                <div id="countdown-urgent" class="countdown-urgent-display hidden">⏱️ <span id="countdown-number">10</span></div>
                 <div class="buzzer-question" id="buzzer-question-display">Preparado...</div>
 
                 <!-- ANSWER BAR: INPUT + ENVIAR — ALWAYS VISIBLE -->
@@ -239,6 +246,12 @@
                 <div id="correct-flash" class="correct-flash hidden">
                     <div class="correct-icon">✅</div>
                     <h2>¡CORRECTO!</h2>
+                </div>
+                <!-- Timeout overlay -->
+                <div id="timeout-overlay" class="timeout-overlay hidden">
+                    <div class="timeout-icon">⚠️</div>
+                    <h2>¡TIEMPO AGOTADO!</h2>
+                    <div class="timeout-text">¡CAMBIO DE TURNO!</div>
                 </div>
             </div>
         </div>

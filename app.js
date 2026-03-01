@@ -231,6 +231,10 @@ const gameStatus = {
 };
 let gameStartTime = null;
 
+// Anti-pegado timer
+const questionTimers = {};
+const QUESTION_TIMEOUT_S = 45;
+
 // ==========================================
 // SCREEN NAVIGATION
 // ==========================================
@@ -258,6 +262,8 @@ function goLobby() {
     gameStatus.team2.totalAnswerTimeMs = 0;
     seenQuestions.team1.clear();
     seenQuestions.team2.clear();
+    // Clear anti-pegado timers
+    Object.keys(questionTimers).forEach(k => { clearTimeout(questionTimers[k]); delete questionTimers[k]; });
     // Hide victory
     const vo = document.getElementById('victory-overlay');
     if (vo) { vo.classList.add('hidden'); vo.classList.remove('active'); }
@@ -319,7 +325,12 @@ async function initHostMode(is1v1 = false) {
             if (!gameStartTime) gameStartTime = Date.now();
         });
         conn.on('data', (data) => handleHostData(conn.metadata.team, data));
-        conn.on('close', () => { delete connections[conn.metadata.team]; updateConnectionCount(); });
+        conn.on('close', () => {
+            const tid = conn.metadata.team;
+            delete connections[tid];
+            if (questionTimers[tid]) { clearTimeout(questionTimers[tid]); delete questionTimers[tid]; }
+            updateConnectionCount();
+        });
     });
 
     // Reset game
@@ -353,7 +364,11 @@ function sendQuestionToTeam(teamId) {
         const q = getUniqueQuestion(teamId);
         ts.currentQuestion = q;
         ts.lastQuestionTime = Date.now();
-        connections[teamId].send({ type: 'NEW_QUESTION', text: q.text });
+        // Clear existing anti-pegado timer
+        if (questionTimers[teamId]) clearTimeout(questionTimers[teamId]);
+        // Start new anti-pegado timer
+        questionTimers[teamId] = setTimeout(() => handleQuestionTimeout(teamId), QUESTION_TIMEOUT_S * 1000);
+        connections[teamId].send({ type: 'NEW_QUESTION', text: q.text, timeLimit: QUESTION_TIMEOUT_S });
         // Update host split board
         const el = document.getElementById(`host-question-${teamId}`);
         if (el) el.innerText = q.text;
@@ -362,10 +377,13 @@ function sendQuestionToTeam(teamId) {
 
 function handleHostData(teamId, data) {
     if (data.type === 'REQUEST_NEW') {
+        if (questionTimers[teamId]) { clearTimeout(questionTimers[teamId]); delete questionTimers[teamId]; }
         sendQuestionToTeam(teamId);
         return;
     }
     if (data.type === 'ANSWER_SUBMIT') {
+        // Clear anti-pegado timer
+        if (questionTimers[teamId]) { clearTimeout(questionTimers[teamId]); delete questionTimers[teamId]; }
         const ts = gameStatus[`team${teamId}`];
         if (!ts.currentQuestion) return;
         const correct = ts.currentQuestion.answer;
@@ -387,8 +405,10 @@ function handleHostData(teamId, data) {
             if (ts.streak > ts.bestStreak) ts.bestStreak = ts.streak;
 
             // 📈 ADAPTIVE DIFFICULTY: increase at streak milestones
+            let diffUp = false;
             if (ts.streak > 0 && ts.streak % DIFF_UP_STREAK === 0 && ts.difficultyLevel < 3) {
                 ts.difficultyLevel += 1;
+                diffUp = true;
             }
 
             // 🛡️ SHIELD: earned at streak 5
@@ -401,6 +421,26 @@ function handleHostData(teamId, data) {
             updateAvatars();
             updateScoreDisplay();
             updateStreakDisplay();
+
+            // 🎆 HOST SCREEN EPIC NOTIFICATIONS
+            let notifDelay = 0;
+            if (isTurbo) {
+                showHostNotification('⚡ ¡TURBO! +2 ⚡', 'turbo', teamId);
+                notifDelay = 800;
+            }
+            if (ts.streak === 3 || ts.streak === 5 || ts.streak === 7 || (ts.streak >= 10 && ts.streak % 5 === 0)) {
+                setTimeout(() => showHostNotification(`🔥 ¡RACHA ×${ts.streak}!`, 'streak', teamId), notifDelay);
+                notifDelay += 800;
+            }
+            if (shieldEarned) {
+                setTimeout(() => showHostNotification('🛡️ ¡ESCUDO ACTIVADO!', 'shield', teamId), notifDelay);
+                notifDelay += 800;
+            }
+            if (diffUp) {
+                const diffNames = { 2: '¡NIVEL MEDIO!', 3: '¡NIVEL DIFÍCIL!' };
+                setTimeout(() => showHostNotification(`📈 ${diffNames[ts.difficultyLevel] || '¡NIVEL UP!'}`, 'diffup', teamId), notifDelay);
+            }
+
             connections[teamId].send({
                 type: 'CORRECT',
                 streak: ts.streak,
@@ -412,7 +452,8 @@ function handleHostData(teamId, data) {
             });
 
             if (ts.score >= WINNING_SCORE) {
-                // VICTORY!
+                // VICTORY! Clear all timers
+                Object.keys(questionTimers).forEach(k => { clearTimeout(questionTimers[k]); delete questionTimers[k]; });
                 const elapsed = gameStartTime ? Math.round((Date.now() - gameStartTime) / 1000) : 0;
                 const mins = Math.floor(elapsed / 60);
                 const secs = elapsed % 60;
@@ -432,6 +473,7 @@ function handleHostData(teamId, data) {
             if (ts.hasShield) {
                 ts.hasShield = false;
                 connections[teamId].send({ type: 'SHIELD_USED' });
+                showHostNotification('🛡️ ¡SALVADO!', 'shield-used', teamId);
                 // No freeze, just send new question
                 sendQuestionToTeam(teamId);
             } else {
@@ -445,6 +487,7 @@ function handleHostData(teamId, data) {
             if (ts.consecutiveWrong >= DIFF_DOWN_MISS && ts.difficultyLevel > 1) {
                 ts.difficultyLevel -= 1;
                 ts.consecutiveWrong = 0;
+                showHostNotification('📉 NIVEL AJUSTADO', 'diffdown', teamId);
             }
             updateStreakDisplay();
         }
@@ -486,6 +529,38 @@ function updateStreakDisplay() {
             el.classList.remove('hidden');
         }
     });
+}
+
+// ==========================================
+// HOST EPIC NOTIFICATIONS
+// ==========================================
+function showHostNotification(text, type, teamId) {
+    const container = document.getElementById('host-notifications');
+    if (!container) return;
+    const notif = document.createElement('div');
+    notif.className = `host-notif notif-${type} notif-team-${teamId}`;
+    notif.innerHTML = `<span class="notif-team">EQUIPO ${teamId}</span><span class="notif-text">${text}</span>`;
+    container.appendChild(notif);
+    setTimeout(() => { if (notif.parentNode) notif.remove(); }, 3500);
+}
+
+// ==========================================
+// ANTI-PEGADO TIMEOUT
+// ==========================================
+function handleQuestionTimeout(teamId) {
+    delete questionTimers[teamId];
+    const ts = gameStatus[`team${teamId}`];
+    // Reset streak (they got stuck) but no score penalty
+    ts.streak = 0;
+    updateStreakDisplay();
+    // Notify buzzer
+    if (connections[teamId]) {
+        connections[teamId].send({ type: 'TIMEOUT' });
+    }
+    // Epic notification on host
+    showHostNotification('⚠️ ¡TIEMPO! ¡CAMBIO!', 'timeout', teamId);
+    // Send new question after a brief delay
+    setTimeout(() => { sendQuestionToTeam(teamId); }, 2500);
 }
 
 function showVictory(teamId, timeStr) {
@@ -615,8 +690,10 @@ function joinRoom() {
             if (data.type === 'NEW_QUESTION') {
                 document.getElementById('buzzer-question-display').innerText = data.text;
                 clearNum();
+                startBuzzerCountdown(data.timeLimit || QUESTION_TIMEOUT_S);
             }
             if (data.type === 'CORRECT') {
+                stopBuzzerCountdown();
                 showCorrectFlash();
                 const th = document.getElementById('buzzer-team-name');
                 let headerText = `EQUIPO ${buzzerTeamId}`;
@@ -673,6 +750,7 @@ function joinRoom() {
                 }
             }
             if (data.type === 'SHIELD_USED') {
+                stopBuzzerCountdown();
                 // Shield blocked the freeze!
                 const th = document.getElementById('buzzer-team-name');
                 th.innerText = '🛡️ ¡ESCUDO USADO! ¡SALVADO! 🛡️';
@@ -685,9 +763,20 @@ function joinRoom() {
                 }, 2000);
             }
             if (data.type === 'FREEZE_PENALTY') {
+                stopBuzzerCountdown();
                 applyFreeze(data.seconds);
             }
+            if (data.type === 'TIMEOUT') {
+                stopBuzzerCountdown();
+                clearNum();
+                const tOverlay = document.getElementById('timeout-overlay');
+                tOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    tOverlay.classList.add('hidden');
+                }, 2500);
+            }
             if (data.type === 'GAME_OVER') {
+                stopBuzzerCountdown();
                 const isWinner = data.winner == buzzerTeamId;
                 document.getElementById('buzzer-question-display').innerText =
                     isWinner ? "🏆 ¡GANASTE! 🏆" : "😓 FIN DEL JUEGO";
@@ -762,4 +851,61 @@ function showCorrectFlash() {
     const flash = document.getElementById('correct-flash');
     flash.classList.remove('hidden');
     setTimeout(() => flash.classList.add('hidden'), 600);
+}
+
+// ==========================================
+// BUZZER COUNTDOWN TIMER
+// ==========================================
+let buzzerCountdownInterval = null;
+
+function startBuzzerCountdown(seconds) {
+    stopBuzzerCountdown();
+    const container = document.getElementById('countdown-container');
+    const bar = document.getElementById('countdown-bar');
+    const urgentEl = document.getElementById('countdown-urgent');
+    const numEl = document.getElementById('countdown-number');
+    if (!container || !bar) return;
+
+    container.classList.remove('hidden');
+    urgentEl.classList.add('hidden');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    bar.className = 'countdown-fill';
+    bar.offsetHeight; // force reflow
+    bar.style.transition = `width ${seconds}s linear`;
+    bar.style.width = '0%';
+
+    let remaining = seconds;
+    buzzerCountdownInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 15 && remaining > 0) {
+            urgentEl.classList.remove('hidden');
+            numEl.innerText = remaining;
+        }
+        if (remaining <= 10) {
+            bar.classList.add('countdown-urgent');
+            urgentEl.classList.remove('countdown-critical-num');
+        }
+        if (remaining <= 5) {
+            bar.classList.add('countdown-critical');
+            urgentEl.classList.add('countdown-critical-num');
+        }
+        if (remaining <= 0) {
+            clearInterval(buzzerCountdownInterval);
+            buzzerCountdownInterval = null;
+        }
+    }, 1000);
+}
+
+function stopBuzzerCountdown() {
+    if (buzzerCountdownInterval) {
+        clearInterval(buzzerCountdownInterval);
+        buzzerCountdownInterval = null;
+    }
+    const container = document.getElementById('countdown-container');
+    const bar = document.getElementById('countdown-bar');
+    const urgentEl = document.getElementById('countdown-urgent');
+    if (container) container.classList.add('hidden');
+    if (bar) { bar.style.width = '100%'; bar.style.transition = 'none'; bar.className = 'countdown-fill'; }
+    if (urgentEl) { urgentEl.classList.add('hidden'); urgentEl.classList.remove('countdown-critical-num'); }
 }

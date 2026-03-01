@@ -1584,3 +1584,213 @@ h3 {
     font-weight: 700;
     color: white;
 }
+
+/* ===== HOST EPIC NOTIFICATIONS ===== */
+#host-notifications {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.host-notif {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 1.5rem 3rem;
+    border-radius: 24px;
+    animation: notifInvade 3s ease-out forwards;
+}
+
+.notif-team {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1rem, 2.5vw, 1.6rem);
+    font-weight: 700;
+    letter-spacing: 4px;
+    opacity: 0.9;
+}
+
+.notif-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-weight: 900;
+    text-align: center;
+    line-height: 1.1;
+}
+
+/* Team color accents */
+.notif-team-1 .notif-team { color: var(--accent-blue); text-shadow: 0 0 20px var(--accent-blue); }
+.notif-team-2 .notif-team { color: var(--accent-pink); text-shadow: 0 0 20px var(--accent-pink); }
+
+/* --- Streak --- */
+.notif-streak {
+    background: radial-gradient(ellipse at center, rgba(255, 145, 0, 0.35), rgba(255, 60, 0, 0.1), transparent 70%);
+}
+.notif-streak .notif-text {
+    color: #ff9100;
+    text-shadow: 0 0 40px #ff6600, 0 0 80px rgba(255, 100, 0, 0.5), 0 0 120px rgba(255, 50, 0, 0.3);
+}
+
+/* --- Turbo --- */
+.notif-turbo {
+    background: radial-gradient(ellipse at center, rgba(255, 215, 0, 0.4), rgba(255, 180, 0, 0.1), transparent 70%);
+}
+.notif-turbo .notif-text {
+    color: #ffd700;
+    text-shadow: 0 0 40px #ffaa00, 0 0 80px rgba(255, 200, 0, 0.6), 0 0 130px rgba(255, 150, 0, 0.3);
+}
+
+/* --- Shield earned --- */
+.notif-shield {
+    background: radial-gradient(ellipse at center, rgba(0, 180, 255, 0.35), rgba(0, 229, 255, 0.1), transparent 70%);
+}
+.notif-shield .notif-text {
+    color: #00e5ff;
+    text-shadow: 0 0 40px #00b4ff, 0 0 80px rgba(0, 180, 255, 0.5), 0 0 120px rgba(0, 140, 255, 0.3);
+}
+
+/* --- Shield used --- */
+.notif-shield-used {
+    background: radial-gradient(ellipse at center, rgba(57, 255, 20, 0.35), rgba(0, 229, 255, 0.12), transparent 70%);
+}
+.notif-shield-used .notif-text {
+    color: #39ff14;
+    text-shadow: 0 0 40px #39ff14, 0 0 80px rgba(57, 255, 20, 0.5), 0 0 120px rgba(0, 200, 100, 0.3);
+}
+
+/* --- Difficulty up --- */
+.notif-diffup {
+    background: radial-gradient(ellipse at center, rgba(255, 60, 60, 0.3), rgba(255, 100, 0, 0.08), transparent 70%);
+}
+.notif-diffup .notif-text {
+    color: #ff4444;
+    text-shadow: 0 0 30px #ff4444, 0 0 60px rgba(255, 60, 60, 0.4);
+}
+
+/* --- Difficulty down --- */
+.notif-diffdown {
+    background: radial-gradient(ellipse at center, rgba(57, 255, 20, 0.2), rgba(0, 200, 100, 0.08), transparent 70%);
+}
+.notif-diffdown .notif-text {
+    color: #39ff14;
+    text-shadow: 0 0 30px #39ff14, 0 0 60px rgba(57, 255, 20, 0.3);
+}
+
+/* --- Timeout --- */
+.notif-timeout {
+    background: radial-gradient(ellipse at center, rgba(255, 20, 60, 0.4), rgba(255, 60, 60, 0.15), transparent 70%);
+    animation: notifInvade 3s ease-out forwards, notifShake 0.6s ease;
+}
+.notif-timeout .notif-text {
+    color: #ff3366;
+    text-shadow: 0 0 40px #ff3366, 0 0 80px rgba(255, 50, 100, 0.5);
+}
+
+@keyframes notifInvade {
+    0% { transform: scale(0) rotate(-3deg); opacity: 0; filter: blur(15px); }
+    8% { transform: scale(1.3) rotate(1deg); opacity: 1; filter: blur(0); }
+    15% { transform: scale(0.95) rotate(-0.5deg); }
+    22% { transform: scale(1.05) rotate(0deg); }
+    30% { transform: scale(1) rotate(0deg); }
+    75% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.3) translateY(-40px); opacity: 0; filter: blur(8px); }
+}
+
+@keyframes notifShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-15px); }
+    40% { transform: translateX(15px); }
+    60% { transform: translateX(-8px); }
+    80% { transform: translateX(8px); }
+}
+
+/* ===== BUZZER COUNTDOWN TIMER ===== */
+.countdown-container {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.countdown-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+    border-radius: 0 4px 4px 0;
+    transition: width 1s linear;
+}
+
+.countdown-fill.countdown-urgent {
+    background: linear-gradient(90deg, #ff9100, #ffd700);
+}
+
+.countdown-fill.countdown-critical {
+    background: linear-gradient(90deg, #ff1744, #ff5252);
+    animation: countdownPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.countdown-urgent-display {
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--accent-yellow);
+    padding: 0.2rem;
+    background: rgba(255, 145, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.countdown-urgent-display.countdown-critical-num {
+    color: #ff1744;
+    background: rgba(255, 23, 68, 0.2);
+    animation: countdownPulse 0.5s ease-in-out infinite;
+}
+
+/* --- Timeout overlay on buzzer --- */
+.timeout-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 100, 0, 0.92);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    animation: shakeIt 0.5s ease;
+}
+
+.timeout-icon {
+    font-size: 5rem;
+}
+
+.timeout-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 0 20px white;
+    text-align: center;
+    padding: 0.5rem 1rem;
+}
