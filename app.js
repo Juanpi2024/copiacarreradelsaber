@@ -10,7 +10,7 @@ let selectedLevel = '3-4'; // Default level
 let selectedSubject = 'matematicas'; // Default subject
 
 // Anti-repetition: tracks question hashes seen by each team
-const seenQuestions = { team1: new Set(), team2: new Set() };
+const seenQuestions = {};
 
 // ==========================================
 // QUESTION GENERATION (delegated to modules)
@@ -23,18 +23,17 @@ function generateQuestion(level, difficulty) {
 
 // Generate a unique question for a team (anti-repetition + adaptive difficulty)
 function getUniqueQuestion(teamId) {
-    const teamKey = `team${teamId}`;
-    const ts = gameStatus[teamKey];
+    const ts = gameStatus[teamId];
     let attempts = 0;
     let q;
     do {
         q = generateQuestion(selectedLevel, ts ? ts.difficultyLevel : 2);
         attempts++;
         if (attempts > 50) {
-            seenQuestions[teamKey].clear();
+            seenQuestions[teamId].clear();
         }
-    } while (seenQuestions[teamKey].has(q.text) && attempts < 60);
-    seenQuestions[teamKey].add(q.text);
+    } while (seenQuestions[teamId].has(q.text) && attempts < 60);
+    seenQuestions[teamId].add(q.text);
     return q;
 }
 
@@ -43,11 +42,9 @@ const TURBO_TIME_MS = 3000;
 const SHIELD_STREAK = 5;
 const DIFF_UP_STREAK = 3;   // Consecutive correct to increase difficulty
 const DIFF_DOWN_MISS = 2;   // Consecutive incorrect to decrease difficulty
-const gameStatus = {
-    team1: { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0, hasShield: false, turboCount: 0, difficultyLevel: 2, consecutiveWrong: 0 },
-    team2: { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0, hasShield: false, turboCount: 0, difficultyLevel: 2, consecutiveWrong: 0 }
-};
+let gameStatus = {};
 let gameStartTime = null;
+let playerCounter = 0; // Para asignar IDs de UI únicos
 
 // Anti-pegado timer
 const questionTimers = {};
@@ -66,20 +63,9 @@ function goLobby() {
     role = null;
     connections = {};
     // Reset scores and seen questions
-    gameStatus.team1.score = 0;
-    gameStatus.team2.score = 0;
-    gameStatus.team1.currentQuestion = null;
-    gameStatus.team2.currentQuestion = null;
-    gameStatus.team1.streak = 0;
-    gameStatus.team2.streak = 0;
-    gameStatus.team1.bestStreak = 0;
-    gameStatus.team2.bestStreak = 0;
-    gameStatus.team1.incorrect = 0;
-    gameStatus.team2.incorrect = 0;
-    gameStatus.team1.totalAnswerTimeMs = 0;
-    gameStatus.team2.totalAnswerTimeMs = 0;
-    seenQuestions.team1.clear();
-    seenQuestions.team2.clear();
+    gameStatus = {};
+    for (let key in seenQuestions) delete seenQuestions[key];
+    playerCounter = 0;
     // Clear anti-pegado timers
     Object.keys(questionTimers).forEach(k => { clearTimeout(questionTimers[k]); delete questionTimers[k]; });
     // Hide victory
@@ -115,15 +101,7 @@ async function initHostMode(is1v1 = false) {
     roomCode = generateRoomCode();
     document.getElementById('display-room-code').innerText = roomCode;
 
-    // Split board
-    const splitBoard = document.getElementById('split-board-container');
-    if (is1v1) {
-        splitBoard.classList.remove('hidden');
-        splitBoard.classList.add('active');
-    } else {
-        splitBoard.classList.add('hidden');
-        splitBoard.classList.remove('active');
-    }
+    // Removed splitboard logic
 
     // Victory overlay reset
     const vo = document.getElementById('victory-overlay');
@@ -138,8 +116,17 @@ async function initHostMode(is1v1 = false) {
 
     peer.on('connection', (conn) => {
         conn.on('open', () => {
-            const teamId = conn.metadata.team;
+            const tId = conn.metadata.team || 'Jugador';
+            const teamId = tId.trim();
+            // Re-assign metadata to sanitized version
+            conn.metadata.team = teamId;
             connections[teamId] = conn;
+            // Initialize new player if not exists
+            if (!gameStatus[teamId]) {
+                gameStatus[teamId] = { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0, hasShield: false, turboCount: 0, difficultyLevel: 2, consecutiveWrong: 0 };
+                seenQuestions[teamId] = new Set();
+                createPlayerTrack(teamId);
+            }
             updateConnectionCount();
             sendQuestionToTeam(teamId);
             if (!gameStartTime) gameStartTime = Date.now();
@@ -153,14 +140,58 @@ async function initHostMode(is1v1 = false) {
         });
     });
 
-    // Reset game
-    gameStatus.team1 = { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0, hasShield: false, turboCount: 0, difficultyLevel: 2, consecutiveWrong: 0 };
-    gameStatus.team2 = { score: 0, currentQuestion: null, streak: 0, bestStreak: 0, incorrect: 0, totalAnswerTimeMs: 0, lastQuestionTime: 0, hasShield: false, turboCount: 0, difficultyLevel: 2, consecutiveWrong: 0 };
-    seenQuestions.team1.clear();
-    seenQuestions.team2.clear();
+    // Reset game dynamically
+    gameStatus = {};
+    for (let key in seenQuestions) delete seenQuestions[key];
+    const lanesContainer = document.getElementById('lanes-container');
+    if (lanesContainer) lanesContainer.innerHTML = '';
+    playerCounter = 0;
     gameStartTime = null;
     updateAvatars();
-    updateScoreDisplay();
+}
+
+function createPlayerTrack(teamId) {
+    playerCounter++;
+    // Generar un color o tema aleatorio o basado en ID
+    const colors = ['blue', 'pink', 'green', 'yellow', 'cyan', 'orange'];
+    const trackColor = colors[playerCounter % colors.length];
+
+    // Asignamos una ID de UI a este teamId
+    gameStatus[teamId].uiId = playerCounter;
+
+    const container = document.getElementById('lanes-container');
+    if (!container) return;
+
+    const laneDiv = document.createElement('div');
+    laneDiv.className = `race-lane lane-${trackColor}`;
+    laneDiv.innerHTML = `
+        <div class="lane-label">${teamId} <span id="streak-${playerCounter}" class="streak-badge hidden"></span></div>
+        <div class="progress-track">
+            <div class="progress-fill" id="progress-fill-${playerCounter}" style="background: var(--accent-${trackColor}); box-shadow: 0 0 20px var(--accent-${trackColor});"></div>
+            <div class="progress-markers">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="lane-runner" id="avatar-${playerCounter}">
+            <div class="runner-character ${trackColor}-char">
+                <div class="char-ear char-ear-l"></div>
+                <div class="char-ear char-ear-r"></div>
+                <div class="char-head">
+                    <div class="char-eye eye-l"></div>
+                    <div class="char-eye eye-r"></div>
+                    <div class="char-mouth"></div>
+                </div>
+                <div class="char-body"></div>
+                <div class="char-legs">
+                    <div class="char-leg leg-l"></div>
+                    <div class="char-leg leg-r"></div>
+                </div>
+            </div>
+        </div>
+        <div class="finish-marker">🏁</div>
+    `;
+    container.appendChild(laneDiv);
 }
 
 function updateConnectionCount() {
@@ -172,10 +203,7 @@ function updateConnectionCount() {
 }
 
 function updateScoreDisplay() {
-    const s1 = document.getElementById('score-1');
-    const s2 = document.getElementById('score-2');
-    if (s1) s1.innerText = gameStatus.team1.score;
-    if (s2) s2.innerText = gameStatus.team2.score;
+    // Ya no actualizamos `#score-1` o `#score-2` porque se eliminaron
 }
 
 function sendQuestionToTeam(teamId) {
@@ -194,9 +222,7 @@ function sendQuestionToTeam(teamId) {
         const payload = { type: 'NEW_QUESTION', text: q.text, timeLimit: QUESTION_TIMEOUT_S, answerType: answerType };
         if (q.options) payload.options = q.options;
         connections[teamId].send(payload);
-        // Update host split board
-        const el = document.getElementById(`host-question-${teamId}`);
-        if (el) el.innerText = q.text;
+        // Update host split board (eliminado)
     }
 }
 
@@ -209,8 +235,8 @@ function handleHostData(teamId, data) {
     if (data.type === 'ANSWER_SUBMIT') {
         // Clear anti-pegado timer
         if (questionTimers[teamId]) { clearTimeout(questionTimers[teamId]); delete questionTimers[teamId]; }
-        const ts = gameStatus[`team${teamId}`];
-        if (!ts.currentQuestion) return;
+        const ts = gameStatus[teamId];
+        if (!ts || !ts.currentQuestion) return;
         const correct = ts.currentQuestion.answer;
         const submitted = parseInt(data.value);
 
@@ -320,14 +346,15 @@ function handleHostData(teamId, data) {
 }
 
 function updateAvatars() {
-    const p1 = Math.min((gameStatus.team1.score / WINNING_SCORE) * 100, 100);
-    const p2 = Math.min((gameStatus.team2.score / WINNING_SCORE) * 100, 100);
-    document.getElementById('avatar-1').style.left = `${2 + p1 * 0.85}%`;
-    document.getElementById('avatar-2').style.left = `${2 + p2 * 0.85}%`;
-    const pf1 = document.getElementById('progress-fill-1');
-    const pf2 = document.getElementById('progress-fill-2');
-    if (pf1) pf1.style.width = `${p1}%`;
-    if (pf2) pf2.style.width = `${p2}%`;
+    for (let teamId in gameStatus) {
+        const ts = gameStatus[teamId];
+        const uiId = ts.uiId;
+        const p = Math.min((ts.score / WINNING_SCORE) * 100, 100);
+        const avatarEl = document.getElementById(`avatar-${uiId}`);
+        const fillEl = document.getElementById(`progress-fill-${uiId}`);
+        if (avatarEl) avatarEl.style.left = `${2 + p * 0.85}%`;
+        if (fillEl) fillEl.style.width = `${p}%`;
+    }
 }
 
 // ==========================================
@@ -335,11 +362,12 @@ function updateAvatars() {
 // ==========================================
 function updateStreakDisplay() {
     const diffLabels = { 1: '🟢', 2: '🟡', 3: '🔴' };
-    [1, 2].forEach(id => {
-        const ts = gameStatus[`team${id}`];
+    for (let teamId in gameStatus) {
+        const ts = gameStatus[teamId];
+        const uiId = ts.uiId;
         const streak = ts.streak;
-        const el = document.getElementById(`streak-${id}`);
-        if (!el) return;
+        const el = document.getElementById(`streak-${uiId}`);
+        if (!el) continue;
         const diffIcon = diffLabels[ts.difficultyLevel] || '🟡';
         if (streak >= 2) {
             let fires = '🔥';
@@ -353,7 +381,7 @@ function updateStreakDisplay() {
             el.innerText = diffIcon;
             el.classList.remove('hidden');
         }
-    });
+    }
 }
 
 // ==========================================
@@ -363,8 +391,9 @@ function showHostNotification(text, type, teamId) {
     const container = document.getElementById('host-notifications');
     if (!container) return;
     const notif = document.createElement('div');
-    notif.className = `host-notif notif-${type} notif-team-${teamId}`;
-    notif.innerHTML = `<span class="notif-team">EQUIPO ${teamId}</span><span class="notif-text">${text}</span>`;
+    const uiId = gameStatus[teamId] ? gameStatus[teamId].uiId : 0;
+    notif.className = `host-notif notif-${type} notif-team-${uiId}`;
+    notif.innerHTML = `<span class="notif-team">${teamId}</span><span class="notif-text">${text}</span>`;
     container.appendChild(notif);
     setTimeout(() => { if (notif.parentNode) notif.remove(); }, 3500);
 }
@@ -374,7 +403,8 @@ function showHostNotification(text, type, teamId) {
 // ==========================================
 function handleQuestionTimeout(teamId) {
     delete questionTimers[teamId];
-    const ts = gameStatus[`team${teamId}`];
+    const ts = gameStatus[teamId];
+    if (!ts) return;
     // Reset streak (they got stuck) but no score penalty
     ts.streak = 0;
     updateStreakDisplay();
@@ -393,22 +423,22 @@ function showVictory(teamId, timeStr) {
     vo.classList.remove('hidden');
     vo.classList.add('active');
     document.getElementById('victory-text').innerText = '🎉 ¡VICTORIA! 🎉';
-    document.getElementById('victory-team').innerText = `EQUIPO ${teamId} gana en ${timeStr}`;
+    document.getElementById('victory-team').innerText = `${teamId} gana en ${timeStr}`;
     launchConfetti();
 
     // Build post-race summary
     const summaryEl = document.getElementById('post-race-summary');
     if (summaryEl) {
         let html = '<div class="summary-grid">';
-        [1, 2].forEach(id => {
-            const ts = gameStatus[`team${id}`];
+        for (let tId in gameStatus) {
+            const ts = gameStatus[tId];
             const total = ts.score + ts.incorrect;
             const accuracy = total > 0 ? Math.round((ts.score / total) * 100) : 0;
             const avgTime = ts.score > 0 ? (ts.totalAnswerTimeMs / ts.score / 1000).toFixed(1) : '—';
-            const isWinner = id == teamId;
+            const isWinner = tId == teamId;
             html += `
-                <div class="summary-card ${isWinner ? 'summary-winner' : ''} ${id === 1 ? 'card-blue' : 'card-pink'}">
-                    <div class="summary-team">${isWinner ? '🏆 ' : ''}EQUIPO ${id}</div>
+                <div class="summary-card ${isWinner ? 'summary-winner' : ''} ${ts.uiId % 2 === 0 ? 'card-blue' : 'card-pink'}">
+                    <div class="summary-team">${isWinner ? '🏆 ' : ''}${tId}</div>
                     <div class="summary-stats">
                         <div class="stat-row"><span class="stat-label">✅ Correctas</span><span class="stat-value">${ts.score}</span></div>
                         <div class="stat-row"><span class="stat-label">❌ Incorrectas</span><span class="stat-value">${ts.incorrect}</span></div>
@@ -418,7 +448,7 @@ function showVictory(teamId, timeStr) {
                         <div class="stat-row"><span class="stat-label">⏱️ Promedio</span><span class="stat-value">${avgTime}s</span></div>
                     </div>
                 </div>`;
-        });
+        }
         html += '</div>';
         summaryEl.innerHTML = html;
         summaryEl.classList.remove('hidden');
@@ -492,10 +522,12 @@ function initBuzzerMode() {
 
 function joinRoom() {
     const code = document.getElementById('input-room-code').value.toUpperCase();
-    const team = document.getElementById('team-selector').value;
+    const teamInput = document.getElementById('team-selector').value.trim();
 
     if (code.length !== 4) { alert("El código debe tener 4 caracteres."); return; }
+    if (!teamInput) { alert("Por favor ingresa tu nombre o avatar."); return; }
 
+    const team = teamInput;
     buzzerTeamId = team;
     const hostPeerId = `mathrace-${code}`;
     peer = new Peer();
@@ -507,8 +539,8 @@ function joinRoom() {
             document.getElementById('join-section').classList.add('hidden');
             document.getElementById('gameplay-section').classList.remove('hidden');
             const th = document.getElementById('buzzer-team-name');
-            th.innerText = `EQUIPO ${team}`;
-            th.className = `team-header team-${team}-theme`;
+            th.innerText = `${team}`;
+            th.className = `team-header team-blue-theme`;
         });
 
         currentConnection.on('data', (data) => {
@@ -538,7 +570,7 @@ function joinRoom() {
                 stopBuzzerCountdown();
                 showCorrectFlash();
                 const th = document.getElementById('buzzer-team-name');
-                let headerText = `EQUIPO ${buzzerTeamId}`;
+                let headerText = `${buzzerTeamId}`;
 
                 // Show turbo flash
                 if (data.turbo) {
@@ -570,7 +602,7 @@ function joinRoom() {
                     let fires = '🔥';
                     if (data.streak >= 7) fires = '🔥🔥🔥';
                     else if (data.streak >= 5) fires = '🔥🔥';
-                    headerText = `EQUIPO ${buzzerTeamId} ${fires}×${data.streak}`;
+                    headerText = `${buzzerTeamId} ${fires}×${data.streak}`;
                     if (data.hasShield) headerText += ' 🛡️';
                 }
 
@@ -579,7 +611,7 @@ function joinRoom() {
                 } else if (!data.shieldEarned) {
                     th.innerText = headerText;
                     setTimeout(() => {
-                        let restoreText = `EQUIPO ${buzzerTeamId}`;
+                        let restoreText = `${buzzerTeamId}`;
                         if (data.streak >= 2) {
                             let f = '🔥';
                             if (data.streak >= 7) f = '🔥🔥🔥';
@@ -601,7 +633,7 @@ function joinRoom() {
                 setTimeout(() => {
                     th.style.background = '';
                     th.style.color = '';
-                    th.innerText = `EQUIPO ${buzzerTeamId}`;
+                    th.innerText = `${buzzerTeamId}`;
                 }, 2000);
             }
             if (data.type === 'FREEZE_PENALTY') {

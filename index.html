@@ -82,98 +82,15 @@
                     <span class="room-label">CÓDIGO:</span>
                     <span id="display-room-code" class="room-code-value">----</span>
                 </div>
-                <div class="live-scores">
-                    <div class="team-score team-score-blue">
-                        <div class="team-dot dot-blue"></div>
-                        <span class="team-label">EQUIPO 1</span>
-                        <span class="team-score-num" id="score-1">0</span>
-                        <span class="team-score-max">/10</span>
-                    </div>
-                    <div class="vs-badge">VS</div>
-                    <div class="team-score team-score-pink">
-                        <div class="team-dot dot-pink"></div>
-                        <span class="team-label">EQUIPO 2</span>
-                        <span class="team-score-num" id="score-2">0</span>
-                        <span class="team-score-max">/10</span>
-                    </div>
-                </div>
                 <div class="connection-info">
-                    <span class="conn-icon">📡</span> <span id="connected-count">0</span>/2
+                    <span class="conn-icon">📡</span> <span id="connected-count">0</span>
                     <button class="exit-btn" onclick="goLobby()">✕</button>
                 </div>
             </div>
 
             <!-- RACE AREA -->
-            <div class="race-area">
-                <!-- Track 1 -->
-                <div class="race-lane lane-blue">
-                    <div class="lane-label">EQUIPO 1 <span id="streak-1" class="streak-badge hidden"></span></div>
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progress-fill-1"></div>
-                        <div class="progress-markers">
-                            <span></span><span></span><span></span><span></span><span></span>
-                            <span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="lane-runner" id="avatar-1">
-                        <div class="runner-character blue-char">
-                            <div class="char-ear char-ear-l"></div>
-                            <div class="char-ear char-ear-r"></div>
-                            <div class="char-head">
-                                <div class="char-eye eye-l"></div>
-                                <div class="char-eye eye-r"></div>
-                                <div class="char-mouth"></div>
-                            </div>
-                            <div class="char-body"></div>
-                            <div class="char-legs">
-                                <div class="char-leg leg-l"></div>
-                                <div class="char-leg leg-r"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="finish-marker">🏁</div>
-                </div>
-
-                <!-- Track 2 -->
-                <div class="race-lane lane-pink">
-                    <div class="lane-label">EQUIPO 2 <span id="streak-2" class="streak-badge hidden"></span></div>
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progress-fill-2"></div>
-                        <div class="progress-markers">
-                            <span></span><span></span><span></span><span></span><span></span>
-                            <span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="lane-runner" id="avatar-2">
-                        <div class="runner-character pink-char">
-                            <div class="char-ear char-ear-l"></div>
-                            <div class="char-ear char-ear-r"></div>
-                            <div class="char-head">
-                                <div class="char-eye eye-l"></div>
-                                <div class="char-eye eye-r"></div>
-                                <div class="char-mouth"></div>
-                            </div>
-                            <div class="char-body"></div>
-                            <div class="char-legs">
-                                <div class="char-leg leg-l"></div>
-                                <div class="char-leg leg-r"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="finish-marker">🏁</div>
-                </div>
-            </div>
-
-            <!-- Split board for 1v1 questions visibility -->
-            <div id="split-board-container" class="hidden">
-                <div class="question-board board-blue">
-                    <div class="board-team-label">🔵 EQUIPO 1</div>
-                    <div class="board-question" id="host-question-1">Esperando...</div>
-                </div>
-                <div class="question-board board-pink">
-                    <div class="board-team-label">🟣 EQUIPO 2</div>
-                    <div class="board-question" id="host-question-2">Esperando...</div>
-                </div>
+            <div class="race-area" id="lanes-container">
+                <!-- Tracks will be injected dynamically -->
             </div>
 
             <!-- Waiting message -->
@@ -204,10 +121,7 @@
                     <h2>Unirse a la Carrera</h2>
                     <input type="text" id="input-room-code" class="huge-input" placeholder="CÓDIGO" maxlength="4"
                         style="text-transform:uppercase" autocomplete="off">
-                    <select id="team-selector" class="huge-input">
-                        <option value="1">🔵 Equipo 1 (Azul)</option>
-                        <option value="2">🟣 Equipo 2 (Magenta)</option>
-                    </select>
+                    <input type="text" id="team-selector" class="huge-input" placeholder="Tu Nombre (Ej: Juan)" maxlength="12" autocomplete="off" style="text-align: center; margin-top: 10px;">
                     <button class="btn btn-primary" onclick="joinRoom()">🔗 Conectar</button>
                     <button class="btn btn-danger btn-small" onclick="goLobby()">Cancelar</button>
                 </div>
